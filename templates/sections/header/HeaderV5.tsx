@@ -1,8 +1,11 @@
+"use client";
 import React from 'react'
 import type { HeaderSectionProps } from "@/types";
+import { SiteLink, useSiteNav } from "../../nav/SiteNavContext";
 
 const HeaderV5 = ({ data }: HeaderSectionProps) => {
-    const menuItems = data?.menuItems || ["Home", "About", "Services", "Gallery", "Contact"];
+    // The menu is derived from the site's pages — add a page, get a link.
+    const { links, activePageId } = useSiteNav();
 
     return (
         <header className="bg-gradient-to-b from-white to-gray-50 shadow-sm">
@@ -22,10 +25,17 @@ const HeaderV5 = ({ data }: HeaderSectionProps) => {
                     </div>
                     {/* Desktop Menu - Centered */}
                     <nav className="hidden lg:flex space-x-14 absolute left-1/2 transform -translate-x-1/2">
-                        {menuItems.map((item) => (
-                            <a key={item} href="#" className="text-gray-700 hover:text-blue-600 transition font-medium text-sm">
-                                {item}
-                            </a>
+                        {links.map((link) => (
+                            <SiteLink
+                                key={link.pageId}
+                                link={link}
+                                className={`transition font-medium text-sm ${link.pageId === activePageId
+                                    ? "text-blue-600"
+                                    : "text-gray-700 hover:text-blue-600"
+                                    }`}
+                            >
+                                {link.label}
+                            </SiteLink>
                         ))}
                     </nav>
                     {/* Right Side Actions */}

@@ -15,6 +15,7 @@
 
 import type {
   AboutData,
+  ApiSectionData,
   ContactData,
   GalleryItem,
   HeaderData,
@@ -61,6 +62,18 @@ export type GallerySectionProps = SectionComponentProps<GalleryItem[]>;
 export type ContactSectionProps = SectionComponentProps<ContactData>;
 
 /**
+ * Props for the API-backed section variants (Events, Groups, My Videos,
+ * Podcast, Audio). They receive only the source config (`slug`) and fetch their
+ * own items at render time — the `data` is never the item list itself.
+ */
+export type ApiSectionProps = SectionComponentProps<ApiSectionData>;
+export type EventSectionProps = ApiSectionProps;
+export type GroupSectionProps = ApiSectionProps;
+export type VideoSectionProps = ApiSectionProps;
+export type PodcastSectionProps = ApiSectionProps;
+export type AudioSectionProps = ApiSectionProps;
+
+/**
  * Union of all possible section props.
  * Used by the TemplateRenderer to pass the correct data to any section variant.
  */
@@ -69,4 +82,5 @@ export type AnySectionProps =
   | AboutSectionProps
   | ServicesSectionProps
   | GallerySectionProps
-  | ContactSectionProps;
+  | ContactSectionProps
+  | ApiSectionProps;

@@ -1,19 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import type { HeaderSectionProps } from "@/types";
-import { ChevronDown, Menu, X } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
+import { SiteLink, useSiteNav } from "../../nav/SiteNavContext";
 
 const HeaderV1 = ({ data }: HeaderSectionProps) => {
-    const pathname = usePathname();
-    const menuItems = data?.menuItems || [
-        "Home",
-        "About",
-        "Services",
-        "Gallery",
-        "Contact",
-    ];
+    // The menu is derived from the site's pages — add a page, get a link.
+    const { links, homeLink, activePageId } = useSiteNav();
     const [isOpen, setIsOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -48,8 +41,8 @@ const HeaderV1 = ({ data }: HeaderSectionProps) => {
                 <div className="container">
                     <div className="flex items-center justify-between py-2">
 
-                        {(data?.logoImage || data?.logoText) && (
-                            <Link href="/" className="flex-shrink-0 flex items-center gap-2">
+                        {(data?.logoImage || data?.logoText) && homeLink && (
+                            <SiteLink link={homeLink} className="flex-shrink-0 flex items-center gap-2">
                                 {data?.logoImage && (
                                     <img
                                         src={data.logoImage} alt={data?.logoText || "Logo"}
@@ -62,21 +55,18 @@ const HeaderV1 = ({ data }: HeaderSectionProps) => {
                                         {data.logoText}
                                     </span>
                                 )}
-                            </Link>
+                            </SiteLink>
                         )}
 
                         <nav className="hidden lg:block">
                             <ul className="flex items-center gap-8 montserrat-alternates-font">
-                                {menuItems.map((item) => {
-                                    const href =
-                                        item === "Home" ? "/" : `/${item.toLowerCase()}`;
-
-                                    const isActive = pathname === href;
+                                {links.map((link) => {
+                                    const isActive = link.pageId === activePageId;
 
                                     return (
-                                        <li key={item}>
-                                            <Link
-                                                href={href}
+                                        <li key={link.pageId}>
+                                            <SiteLink
+                                                link={link}
                                                 className={`relative font-medium text-md tracking-wide transition
                                                         after:absolute
                                                         after:left-0
@@ -90,8 +80,8 @@ const HeaderV1 = ({ data }: HeaderSectionProps) => {
                                                         : "text-white after:w-0 hover:text-red-500 hover:after:w-full"
                                                     }`}
                                             >
-                                                {item}
-                                            </Link>
+                                                {link.label}
+                                            </SiteLink>
                                         </li>
                                     );
                                 })}
@@ -127,23 +117,22 @@ const HeaderV1 = ({ data }: HeaderSectionProps) => {
                 </div>
 
                 <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-red-500 scrollbar-track-[#222]">
-                    {menuItems.map((item) => {
-                        const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
-                        const isActive = pathname === href;
+                    {links.map((link) => {
+                        const isActive = link.pageId === activePageId;
 
                         return (
-                            <Link
-                                key={item}
-                                href={href}
+                            <SiteLink
+                                key={link.pageId}
+                                link={link}
                                 onClick={() => setIsOpen(false)}
-                                className={`block px-6 py-4 relative font-medium text-md tracking-wide transition
+                                className={`block w-full text-left px-6 py-4 relative font-medium text-md tracking-wide transition
                                         ${isActive
                                         ? "text-red-500 bg-white/10"
                                         : "text-white hover:text-red-500 hover:bg-white/5"
                                     }`}
                             >
-                                {item}
-                            </Link>
+                                {link.label}
+                            </SiteLink>
                         );
                     })}
                 </nav>

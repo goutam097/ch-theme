@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useSiteContent, useActiveTemplate, useSettings } from "@/hooks/useSite";
 import { useHydrated } from "@/hooks/useHydrated";
 import { TemplateRenderer } from "@/templates/registry/TemplateRenderer";
@@ -17,12 +18,29 @@ const DEVICE_WIDTH: Record<PreviewDevice, string> = {
  * frame. Because it reads the store directly, every keystroke in an editor is
  * reflected here instantly — this is the "right side" of the split preview.
  *
+ * WHICH PAGE: `pageId` is the page being edited. The preview shows that page,
+ * so what you're typing is always what you're looking at.
+ *
+ * CLICKING THE MENU: the preview isn't mounted at the site's own URL, so a real
+ * navigation would throw the user out of the dashboard. Instead a menu click
+ * opens that page's editor — clicking "About" in the preview takes you to the
+ * About page's content, preview and all. (That's the `onNavigate` prop; passing
+ * it also puts the header variants into preview link mode.)
+ *
  * HYDRATION: the store hydrates from localStorage only on the client, so the
  * persisted content/template/device differ from the server's initial defaults.
  * We render a stable placeholder until hydration completes, so the server HTML
  * and the first client render match, then swap in the real preview.
  */
-export function PreviewCanvas({ className }: { className?: string }) {
+export function PreviewCanvas({
+  className,
+  pageId,
+}: {
+  className?: string;
+  /** The page to show. Defaults to the site's home page. */
+  pageId?: string;
+}) {
+  const router = useRouter();
   const hydrated = useHydrated();
   const content = useSiteContent();
   const template = useActiveTemplate();
@@ -42,7 +60,13 @@ export function PreviewCanvas({ className }: { className?: string }) {
       >
         {hydrated ? (
           // key forces a clean remount on template switch so entrance animations replay
-          <TemplateRenderer key={template.id} templateId={template.id} content={content} />
+          <TemplateRenderer
+            key={template.id}
+            templateId={template.id}
+            content={content}
+            pageId={pageId}
+            onNavigate={(id) => router.push(`/dashboard/pages/${id}`)}
+          />
         ) : (
           <div className="flex min-h-[60vh] items-center justify-center text-sm text-zinc-400">
             Loading preview…

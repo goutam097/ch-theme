@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { headerSchema, type HeaderFormValues } from "@/lib/schemas";
@@ -9,78 +10,50 @@ import { updateHeader } from "@/store/slices/websiteSlice";
 import { useSiteContent } from "@/hooks/useSite";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { useFormSync } from "./useFormSync";
 import SelectOption from "../ui/SelectOption";
 
-const see_list = [{ value: "logo", label: "Add Logo" }, { value: "text", label: "Add Text" }];
+const see_list = [
+  { value: "logo", label: "Add Logo" },
+  { value: "text", label: "Add Text" },
+];
 
+/**
+ * Edits the header BRANDING (logo text / logo image).
+ *
+ * The navigation menu is NOT edited here any more. It's derived from the site's
+ * pages, so it's managed on the Pages screen — a menu item and a page are the
+ * same thing, and editing them in two places would let them drift apart.
+ */
 export function HeaderEditor() {
   const content = useSiteContent();
-  const header = content?.header || { logoText: "MyWebsite", logoPic: "", menuItems: ["Home", "About", "Services", "Gallery", "Contact"] };
+  const header = content.header;
   const dispatch = useAppDispatch();
-  const [addLogo, setAddLogo] = useState("logo");
-  const [logoPic, setLogoPic] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  const [addLogo, setAddLogo] = useState(header.logoImage ? "logo" : "text");
+  const [logoPic, setLogoPic] = useState<string | null>(header.logoImage || null);
 
   const { register, watch, setValue, formState: { errors } } = useForm<HeaderFormValues>({
     resolver: zodResolver(headerSchema),
     mode: "onChange",
     defaultValues: {
-      logoText: header?.logoText || "MyWebsite",
-      logoImage: header?.logoImage || "",
-      menuItems: header?.menuItems || ["Home", "About", "Services", "Gallery", "Contact"],
+      logoText: header.logoText || "MyWebsite",
+      logoImage: header.logoImage || "",
     },
   });
 
-  useEffect(() => {
-    const subscription = watch((values) => {
-      dispatch(updateHeader(values as Partial<HeaderFormValues>));
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, dispatch]);
+  useFormSync<HeaderFormValues, HeaderFormValues>(watch, (values) => {
+    dispatch(updateHeader(values));
+  });
 
-  const menuItems = watch("menuItems") ?? [];
-
-  const handleAddMenu = () => {
-    if (menuItems.length >= 5) return;
-
-    setValue("menuItems", [...menuItems, ""], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  const handleMenuChange = (index: number, value: string) => {
-    const updated = [...menuItems];
-    updated[index] = value;
-
-    setValue("menuItems", updated, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  const handleRemoveMenu = (index: number) => {
-    const updated = menuItems.filter((_, i) => i !== index);
-
-    setValue("menuItems", updated, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  const handleProfilePhotoUpload = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       console.error("Please select an image file");
       return;
     }
-    setLogoFile(file);
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -112,104 +85,87 @@ export function HeaderEditor() {
     reader.readAsDataURL(file);
   };
 
+  const menuPages = content.pages.filter((p) => p.showInMenu);
+
   return (
     <form className="space-y-5">
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
         <p className="mb-4 text-xs font-medium text-zinc-500">
-          Logo — choose text, image, or both
+          Logo — choose text or an image
         </p>
         <div>
-          <SelectOption options={see_list} value={addLogo} onChange={(value) => {
-            const selected = value as string;
+          <SelectOption
+            options={see_list}
+            value={addLogo}
+            onChange={(value) => {
+              const selected = value as string;
+              setAddLogo(selected);
 
-            setAddLogo(selected);
-
-            if (selected === "text") {
-              // Remove logo
-              setLogoPic(null);
-              setLogoFile(null);
-
-              setValue("logoImage", "", {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            } else {
-              // Remove text
-              setValue("logoText", "", {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            }
-          }} />
+              if (selected === "text") {
+                // Remove logo image
+                setLogoPic(null);
+                setValue("logoImage", "", { shouldDirty: true, shouldValidate: true });
+                dispatch(updateHeader({ logoImage: "" }));
+              } else {
+                // Remove text
+                setValue("logoText", "", { shouldDirty: true, shouldValidate: true });
+                dispatch(updateHeader({ logoText: "" }));
+              }
+            }}
+          />
         </div>
+
         <div className="space-y-4">
-          {
-            addLogo === 'text' ? (<Field label="Logo Text" error={errors.logoText?.message} hint="Your website's branding name.">
+          {addLogo === "text" ? (
+            <Field label="Logo Text" error={errors.logoText?.message} hint="Your website's branding name.">
               <Input {...register("logoText")} placeholder="MyWebsite" />
-            </Field>) : (
-              <>
-                <Field label="Logo Image URL" error={errors.logoImage?.message} hint="Logo image that appears alongside or instead of text.">
-                  <input type="file" onChange={handleProfilePhotoUpload} accept="image/*" />
-                </Field>
-                {logoPic && (
-                  <div className="mt-3 rounded-lg border border-zinc-200 p-3 bg-white">
-                    <p className="mb-2 text-xs font-medium text-zinc-600">Preview:</p>
-                    <img src={logoPic} alt="Logo preview" className="h-10 object-contain" />
-                  </div>
-                )}
-              </>
-            )
-          }
-
-
+            </Field>
+          ) : (
+            <>
+              <Field label="Logo Image" error={errors.logoImage?.message} hint="Logo image shown in the header.">
+                <input type="file" onChange={handleLogoUpload} accept="image/*" />
+              </Field>
+              {logoPic && (
+                <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-medium text-zinc-600">Preview:</p>
+                  <img src={logoPic} alt="Logo preview" className="h-10 object-contain" />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
+      {/* The menu is the pages — show what's currently in it and link to where
+          it's actually edited, so nobody hunts for a menu field that moved. */}
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-        <p className="mb-3 text-xs font-medium text-zinc-500">
-          Navigation Menu — one item per line
+        <p className="mb-1 text-xs font-medium text-zinc-500">Navigation menu</p>
+        <p className="mb-3 text-xs text-zinc-400">
+          Your menu is built from your pages. Add, rename, reorder or hide a page
+          and the menu follows.
         </p>
-        <Field
-          label="Menu Items"
-          hint="Maximum 5 menu items."
-          error={errors.menuItems?.message}
-        >
-          <div className="space-y-3">
-            {menuItems.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Input
-                  value={item}
-                  placeholder={`Menu ${index + 1}`}
-                  onChange={(e) => handleMenuChange(index, e.target.value)}
-                />
 
-                {menuItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveMenu(index)}
-                    className="flex h-10 w-10 items-center justify-center rounded-md bg-red-500 text-white hover:bg-red-600"
-                  >
-                    −
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {menuItems.length < 5 && (
-              <button
-                type="button"
-                onClick={handleAddMenu}
-                className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {menuPages.length > 0 ? (
+            menuPages.map((page) => (
+              <span
+                key={page.id}
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-700"
               >
-                + Add Menu
-              </button>
-            )}
+                {page.label}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-zinc-400">No pages are shown in the menu.</span>
+          )}
+        </div>
 
-            <p className="text-xs text-gray-500">
-              {menuItems.length}/5 menu items
-            </p>
-          </div>
-        </Field>
+        <Link
+          href="/dashboard/pages"
+          className="inline-flex rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+        >
+          Manage pages &amp; menu
+        </Link>
       </div>
     </form>
   );

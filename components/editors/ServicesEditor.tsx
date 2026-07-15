@@ -1,36 +1,41 @@
 "use client";
 
-import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { servicesSchema, type ServicesFormValues } from "@/lib/schemas";
-import { useAppDispatch } from "@/store/hooks";
-import { setServices } from "@/store/slices/websiteSlice";
-import { useSiteContent } from "@/hooks/useSite";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useFormSync } from "./useFormSync";
+import type { ServiceItem } from "@/types";
 
-export function ServicesEditor() {
-  const services = useSiteContent().services;
-  const dispatch = useAppDispatch();
-
+/**
+ * Edits ONE services block — an array of service items.
+ *
+ * The form wraps the array in `{ items }` because react-hook-form's
+ * `useFieldArray` needs a named field; `onChange` unwraps it again so the owner
+ * only ever sees the block's real shape (`ServiceItem[]`).
+ */
+export function ServicesEditor({
+  data,
+  onChange,
+}: {
+  data: ServiceItem[];
+  onChange: (value: ServiceItem[]) => void;
+}) {
   const { register, control, watch, formState: { errors } } = useForm<ServicesFormValues>({
     resolver: zodResolver(servicesSchema),
     mode: "onChange",
-    defaultValues: { items: services },
+    defaultValues: { items: data },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
-  useEffect(() => {
-    const sub = watch((values) => {
-      if (values.items) dispatch(setServices(values.items as ServicesFormValues["items"]));
-    });
-    return () => sub.unsubscribe();
-  }, [watch, dispatch]);
+  useFormSync<ServicesFormValues, { items?: ServiceItem[] }>(watch, (values) => {
+    if (values.items) onChange(values.items);
+  });
 
   return (
     <form className="space-y-4">

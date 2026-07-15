@@ -8,22 +8,32 @@ import { fetchSiteTheme } from "@/lib/site-api";
 import type { SiteSnapshot } from "@/lib/site-theme";
 
 /**
- * Public, published website served at /site/<slug>.
+ * Public, published website — every page of it.
+ *
+ *   /site/acme          → the site's home page
+ *   /site/acme/about    → the page whose slug is "about"
+ *   /site/acme/pricing  → a page the user created themselves
+ *
+ * This is an OPTIONAL catch-all (`[[...path]]`), which matches both the bare
+ * `/site/<slug>` and any single page segment beneath it. That's what lets one
+ * route serve a menu the user can grow at runtime — there's no per-page route
+ * to add when they create a page. (It also means there must be no sibling
+ * `page.tsx` at `/site/[slug]`: an optional catch-all already matches that path,
+ * and two routes of equal specificity is a build error.)
  *
  * Fetches the published snapshot ({templateId, content, settings}) for `slug`
- * from the backend (via the /api/sites proxy) and renders that template. The
- * rendering call — <TemplateRenderer/> — is identical to the dashboard preview,
+ * and renders it with the SAME <TemplateRenderer/> the dashboard preview uses,
  * so output is pixel-identical everywhere.
  *
  * This is a Client Component because the section variants it renders rely on
- * client-only hooks (framer-motion, useState, usePathname, …).
+ * client-only hooks (framer-motion, useState, …).
  */
 export default function PublicSitePage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; path?: string[] }>;
 }) {
-  const { slug } = use(params);
+  const { slug, path } = use(params);
   const [state, setState] = useState<
     { status: "loading" } | { status: "ready"; snapshot: SiteSnapshot | null }
   >({ status: "loading" });
@@ -67,5 +77,14 @@ export default function PublicSitePage({
     );
   }
 
-  return <TemplateRenderer templateId={snapshot.templateId} content={snapshot.content} />;
+  return (
+    <TemplateRenderer
+      templateId={snapshot.templateId}
+      content={snapshot.content}
+      // `path` selects the page; `basePath` makes every menu link resolve to
+      // /site/<slug>/… rather than the app root.
+      segments={path}
+      basePath={`/site/${slug}`}
+    />
+  );
 }

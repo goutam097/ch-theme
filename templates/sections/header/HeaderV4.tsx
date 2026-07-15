@@ -1,8 +1,11 @@
+"use client";
 import React from 'react'
 import type { HeaderSectionProps } from "@/types";
+import { SiteLink, useSiteNav } from "../../nav/SiteNavContext";
 
 const HeaderV4 = ({ data }: HeaderSectionProps) => {
-    const menuItems = data?.menuItems || ["Home", "About", "Services", "Gallery", "Contact"];
+    // The menu is derived from the site's pages — add a page, get a link.
+    const { links, activePageId } = useSiteNav();
 
     return (
         <header className="bg-white border-b-2 border-gray-100">
@@ -21,12 +24,24 @@ const HeaderV4 = ({ data }: HeaderSectionProps) => {
                     </div>
                     {/* Desktop Menu */}
                     <nav className="hidden md:flex space-x-12">
-                        {menuItems.map((item) => (
-                            <a key={item} href="#" className="text-gray-600 hover:text-blue-600 transition font-medium relative group">
-                                {item}
-                                <span className="absolute bottom-0 left-0 w-0 h-1 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
-                            </a>
-                        ))}
+                        {links.map((link) => {
+                            const isActive = link.pageId === activePageId;
+
+                            return (
+                                <SiteLink
+                                    key={link.pageId}
+                                    link={link}
+                                    className={`transition font-medium relative group ${isActive ? "text-blue-600" : "text-gray-600 hover:text-blue-600"
+                                        }`}
+                                >
+                                    {link.label}
+                                    <span
+                                        className={`absolute bottom-0 left-0 h-1 bg-blue-600 transition-all duration-300 ${isActive ? "w-full" : "w-0 group-hover:w-full"
+                                            }`}
+                                    ></span>
+                                </SiteLink>
+                            );
+                        })}
                     </nav>
                     {/* Search and Auth */}
                     <div className="hidden md:flex items-center space-x-4">

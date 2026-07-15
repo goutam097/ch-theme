@@ -34,6 +34,11 @@ export type AboutVariant = `about_v${number}`;
 export type ServicesVariant = `services_v${number}`;
 export type GalleryVariant = `gallery_v${number}`;
 export type ContactVariant = `contact_v${number}`;
+export type EventVariant = `event_v${number}`;
+export type GroupVariant = `group_v${number}`;
+export type VideoVariant = `video_v${number}`;
+export type PodcastVariant = `podcast_v${number}`;
+export type AudioVariant = `audio_v${number}`;
 
 /** Union of ALL possible section variant IDs across all section types */
 export type SectionVariantId =
@@ -42,7 +47,12 @@ export type SectionVariantId =
   | AboutVariant
   | ServicesVariant
   | GalleryVariant
-  | ContactVariant;
+  | ContactVariant
+  | EventVariant
+  | GroupVariant
+  | VideoVariant
+  | PodcastVariant
+  | AudioVariant;
 
 // =============================================================================
 // SECTION VARIANT MAP — Which variant each section uses in a template
@@ -51,6 +61,9 @@ export type SectionVariantId =
 /**
  * Maps each section to the variant a template uses.
  * This IS the entire visual identity of a template expressed as data.
+ *
+ * A block of type `about` on ANY page renders with the template's `about`
+ * variant — so a template needs one variant per block type, not per page.
  *
  * EXAMPLE:
  *   Template "Aurora" → { header: "header_v1", hero: "hero_v1", about: "about_v1", ... }
@@ -63,6 +76,11 @@ export interface SectionVariantMap {
   services: ServicesVariant;
   gallery: GalleryVariant;
   contact: ContactVariant;
+  event: EventVariant;
+  group: GroupVariant;
+  video: VideoVariant;
+  podcast: PodcastVariant;
+  audio: AudioVariant;
 }
 
 // =============================================================================
@@ -125,7 +143,11 @@ export interface TemplateConfig {
   category: string;
   /** Thumbnail image URL for the template gallery picker */
   thumbnail: string;
-  /** Section → variant mapping for the Home page */
+  /**
+   * Block type → variant mapping. Applies to blocks on EVERY page, not just
+   * home. (The field is named `home` for backwards compatibility with the
+   * existing template configs.)
+   */
   home: SectionVariantMap;
   /** Design tokens (colors, fonts, border radius) */
   theme: TemplateTheme;
@@ -133,20 +155,3 @@ export interface TemplateConfig {
 
 /** Template IDs are just strings */
 export type TemplateId = string;
-
-// =============================================================================
-// RENDER ORDER — Fixed order in which sections appear on the page
-// =============================================================================
-
-/**
- * The order sections are rendered down the page. This is FIXED —
- * users cannot reorder sections. Every template uses this same order.
- */
-export const RENDER_ORDER: SectionKey[] = [
-  "header",
-  "hero",
-  "about",
-  "services",
-  "gallery",
-  "contact",
-];

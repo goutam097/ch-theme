@@ -55,10 +55,26 @@ export const contactSchema = z.object({
   mapUrl: optionalUrl,
 });
 
+/**
+ * Header branding only. The nav menu is NOT here — it's derived from the site's
+ * pages (see `lib/nav.ts`), so a page IS a menu item.
+ */
 export const headerSchema = z.object({
   logoText: z.string().max(60).optional().or(z.literal("")),
   logoImage: optionalUrl,
-  menuItems: z.array(z.string().min(1).max(40)).optional(),
+});
+
+/** A page's own settings: its menu label, its URL slug, and menu visibility. */
+export const pageSchema = z.object({
+  label: z.string().min(1, "Menu label is required").max(40),
+  slug: z
+    .string()
+    .max(60)
+    .regex(
+      /^[a-z0-9-]*$/,
+      "Lowercase letters, numbers and hyphens only",
+    ),
+  showInMenu: z.boolean(),
 });
 
 export const settingsSchema = z.object({
@@ -79,4 +95,5 @@ export type ServicesFormValues = z.infer<typeof servicesSchema>;
 export type GalleryFormValues = z.infer<typeof gallerySchema>;
 export type ContactFormValues = z.infer<typeof contactSchema>;
 export type HeaderFormValues = z.infer<typeof headerSchema>;
+export type PageFormValues = z.infer<typeof pageSchema>;
 export type SettingsFormValues = z.infer<typeof settingsSchema>;

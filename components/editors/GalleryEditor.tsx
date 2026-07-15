@@ -1,43 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { gallerySchema, type GalleryFormValues } from "@/lib/schemas";
 import { fetchGalleryFromApi } from "@/lib/gallery-api";
-import { useAppDispatch } from "@/store/hooks";
-import { setGallery } from "@/store/slices/websiteSlice";
-import { useSiteContent } from "@/hooks/useSite";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFormSync } from "./useFormSync";
+import type { GalleryItem } from "@/types";
 
 /** Where the gallery images come from. */
 type GallerySource = "manual" | "api";
 
-export function GalleryEditor() {
-  const gallery = useSiteContent().gallery;
-  const dispatch = useAppDispatch();
-
+/** Edits ONE gallery block — an array of images. */
+export function GalleryEditor({
+  data,
+  onChange,
+}: {
+  data: GalleryItem[];
+  onChange: (value: GalleryItem[]) => void;
+}) {
   const [source, setSource] = useState<GallerySource>("manual");
 
   const { register, control, watch, reset, formState: { errors } } = useForm<GalleryFormValues>({
     resolver: zodResolver(gallerySchema),
     mode: "onChange",
-    defaultValues: { items: gallery },
+    defaultValues: { items: data },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
-  // Keep the store in sync with manual edits to the field array.
-  useEffect(() => {
-    const sub = watch((values) => {
-      if (values.items) dispatch(setGallery(values.items as GalleryFormValues["items"]));
-    });
-    return () => sub.unsubscribe();
-  }, [watch, dispatch]);
+  useFormSync<GalleryFormValues, { items?: GalleryItem[] }>(watch, (values) => {
+    if (values.items) onChange(values.items);
+  });
 
   return (
     <div className="space-y-4">
@@ -61,8 +60,8 @@ export function GalleryEditor() {
       {source === "api" && (
         <ApiFetchPanel
           onLoaded={(items) => {
-            // Push into the store AND into the form so the results become editable rows.
-            dispatch(setGallery(items));
+            // Push up to the store AND into the form so the results become editable rows.
+            onChange(items);
             reset({ items });
             setSource("manual");
           }}
@@ -101,7 +100,7 @@ export function GalleryEditor() {
 }
 
 /** Slug + page inputs and a Fetch button that pulls images from the album API. */
-function ApiFetchPanel({ onLoaded }: { onLoaded: (items: { image: string }[]) => void }) {
+function ApiFetchPanel({ onLoaded }: { onLoaded: (items: GalleryItem[]) => void }) {
   const [slug, setSlug] = useState("");
   const [page, setPage] = useState("1");
   const [loading, setLoading] = useState(false);

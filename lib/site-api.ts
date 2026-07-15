@@ -6,11 +6,17 @@
  * with a friendly message on failure so the Publish button can surface it.
  */
 
+import { migrateContent } from "./content-migrate";
 import { toRequestBody, type SiteSnapshot } from "./site-theme";
 
 /**
  * Client-side load of a published theme by slug, via our `/api/sites` proxy.
  * Returns the snapshot, or `null` if no theme is saved for that slug.
+ *
+ * Snapshots published before the dynamic-menu feature hold the old flat,
+ * single-page content. They're migrated to the pages model on the way in, so an
+ * already-live site keeps rendering (and gains a working menu) without anyone
+ * having to re-publish it.
  */
 export async function fetchSiteTheme(slug: string): Promise<SiteSnapshot | null> {
   const res = await fetch(`/api/sites/${encodeURIComponent(slug)}`, {
@@ -18,7 +24,9 @@ export async function fetchSiteTheme(slug: string): Promise<SiteSnapshot | null>
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Could not load the site (${res.status}).`);
-  return (await res.json()) as SiteSnapshot;
+
+  const snapshot = (await res.json()) as SiteSnapshot;
+  return { ...snapshot, content: migrateContent(snapshot.content) };
 }
 
 export async function saveSiteTheme(snapshot: SiteSnapshot): Promise<void> {

@@ -15,6 +15,7 @@
  */
 
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { migrateContent } from "@/lib/content-migrate";
 import websiteReducer from "./slices/websiteSlice";
 import templateReducer from "./slices/templateSlice";
 import mediaReducer from "./slices/mediaSlice";
@@ -62,12 +63,12 @@ function loadPersistedState(): Partial<RootState> | undefined {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const state = raw ? (JSON.parse(raw) as Partial<RootState>) : undefined;
-    
+
     if (state && state.website) {
-      // Ensure header property exists (for old persisted state without headers)
-      if (!state.website.header) {
-        state.website.header = { logoText: "MyWebsite", menuItems: ["Home", "About", "Services", "Gallery", "Contact"] };
-      }
+      // Sites saved before the dynamic-menu feature are a flat, single-page bag
+      // of sections with a menu of plain strings. Rebuild them as pages+blocks
+      // so a returning user keeps every word of their content.
+      state.website = migrateContent(state.website);
     }
 
     // `previewDevice` is intentionally never persisted (it's stripped before

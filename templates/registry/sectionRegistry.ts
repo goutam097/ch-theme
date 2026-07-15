@@ -37,6 +37,13 @@ import HeaderV3 from "../sections/header/HeaderV3";
 import HeaderV4 from "../sections/header/HeaderV4";
 import HeaderV5 from "../sections/header/HeaderV5";
 
+// API-backed sections (fetch their items at render time from `/api/sections/*`).
+import EventV1 from "../sections/events/EventV1";
+import GroupV1 from "../sections/groups/GroupV1";
+import MyVideoV1 from "../sections/myVideo/MyVideoV1";
+import PodcastV1 from "../sections/podcast/PodcastV1";
+import AudioV1 from "../sections/audio/AudioV1";
+
 /**
  * SECTION REGISTRY
  * ----------------
@@ -88,6 +95,12 @@ export const sectionRegistry: Record<string, AnySectionComponent> = {
   header_v3: HeaderV3,
   header_v4: HeaderV4,
   header_v5: HeaderV5,
+  // API-backed sections
+  event_v1: EventV1,
+  group_v1: GroupV1,
+  video_v1: MyVideoV1,
+  podcast_v1: PodcastV1,
+  audio_v1: AudioV1,
 };
 
 export function getSectionComponent(

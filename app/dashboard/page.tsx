@@ -10,12 +10,37 @@ export default function DashboardOverviewPage() {
   const settings = useSettings();
   const content = useSiteContent();
 
+  // Content now lives in blocks spread across pages, so the checklist asks
+  // "does the site have a filled-in block of this kind ANYWHERE?" rather than
+  // reading a fixed section off the top of the content.
+  const blocks = content.pages.flatMap((p) => p.blocks);
+  const hasFilled = <T,>(type: string, isFilled: (data: T) => boolean) =>
+    blocks.some((b) => b.type === type && isFilled(b.data as T));
+
   const checklist = [
-    { label: "Hero headline set", done: content.hero.title.trim().length > 0 },
-    { label: "About written", done: content.about.description.trim().length > 20 },
-    { label: "At least one service", done: content.services.length > 0 },
-    { label: "Gallery has images", done: content.gallery.length > 0 },
-    { label: "Contact email set", done: /@/.test(content.contact.email) },
+    {
+      label: "Hero headline set",
+      done: hasFilled<{ title: string }>("hero", (d) => d.title.trim().length > 0),
+    },
+    {
+      label: "About written",
+      done: hasFilled<{ description: string }>(
+        "about",
+        (d) => d.description.trim().length > 20,
+      ),
+    },
+    {
+      label: "At least one service",
+      done: hasFilled<unknown[]>("services", (d) => d.length > 0),
+    },
+    {
+      label: "Gallery has images",
+      done: hasFilled<unknown[]>("gallery", (d) => d.length > 0),
+    },
+    {
+      label: "Contact email set",
+      done: hasFilled<{ email: string }>("contact", (d) => /@/.test(d.email)),
+    },
   ];
   const completed = checklist.filter((c) => c.done).length;
 

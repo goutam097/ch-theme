@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { EyeOff, FileText, Home, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_GROUPS, NAV_ITEMS } from "./nav-items";
-import { useActiveTemplate } from "@/hooks/useSite";
+import { useActiveTemplate, usePages } from "@/hooks/useSite";
+import { useHydrated } from "@/hooks/useHydrated";
 
 export function Sidebar() {
   const pathname = usePathname();
   const template = useActiveTemplate();
+  const pages = usePages();
+  const hydrated = useHydrated();
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex">
@@ -49,6 +52,49 @@ export function Sidebar() {
                   </Link>
                 );
               })}
+
+              {/*
+                The user's pages, listed under Content. This is the dashboard
+                mirror of the site's own menu: it grows and reorders with the
+                pages, because it's rendered straight from them.
+
+                Rendered only after hydration — pages live in localStorage, so
+                the server has no idea what they are.
+              */}
+              {group === "Content" && hydrated && (
+                <div className="mt-1 space-y-0.5 border-l border-zinc-100 pl-3">
+                  {pages.map((page) => {
+                    const href = `/dashboard/pages/${page.id}`;
+                    const active = pathname === href;
+                    return (
+                      <Link
+                        key={page.id}
+                        href={href}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                          active
+                            ? "bg-indigo-50 font-medium text-indigo-700"
+                            : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800",
+                        )}
+                      >
+                        {page.isHome ? (
+                          <Home className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <FileText className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        <span className="truncate">{page.label}</span>
+                        {/* Hidden from the site's menu, but still editable here. */}
+                        {!page.showInMenu && (
+                          <EyeOff
+                            className="ml-auto h-3 w-3 shrink-0 text-zinc-300"
+                            aria-label="Hidden from menu"
+                          />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         ))}

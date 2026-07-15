@@ -15,6 +15,11 @@ export const template5: TemplateConfig = {
     services: "services_v5",
     gallery: "gallery_v5",
     contact: "contact_v5",
+    event: "event_v1",
+    group: "group_v1",
+    video: "video_v1",
+    podcast: "podcast_v1",
+    audio: "audio_v1",
   },
   theme: {
     primary: "#db2777",

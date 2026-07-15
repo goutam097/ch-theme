@@ -1,15 +1,13 @@
+"use client";
 import React, { useEffect, useState } from 'react'
 import type { HeaderSectionProps } from "@/types";
-import { ChevronDown, Menu, X } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
+import { SiteLink, useSiteNav } from "../../nav/SiteNavContext";
 
 const HeaderV2 = ({ data }: HeaderSectionProps) => {
-    const pathname = usePathname();
-
-    const menuItems = data?.menuItems || ["Home", "About", "Services", "Gallery", "Contact"];
+    // The menu is derived from the site's pages — add a page, get a link.
+    const { links, homeLink, activePageId } = useSiteNav();
     const [isOpen, setIsOpen] = useState(false);
-    const [serviceOpen, setServiceOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
     // Disable body scroll when mobile menu opens
@@ -48,26 +46,31 @@ const HeaderV2 = ({ data }: HeaderSectionProps) => {
                     <div className="flex items-center justify-between">
 
                         {/* Logo */}
-                        <Link href="/" className="flex-shrink-0">
-                            <img
-                                src={data.logoImage} alt="Elite"
-                                className={`object-contain transition-all duration-500 ${isScrolled ? "w-16 h-16 md:w-18 md:h-18" : "w-20 h-20 md:w-26 md:h-26"
-                                    }`}
-                            />
-                        </Link>
+                        {homeLink && (
+                            <SiteLink link={homeLink} className="flex-shrink-0 flex items-center gap-2">
+                                {data?.logoImage && (
+                                    <img
+                                        src={data.logoImage} alt={data?.logoText || "Logo"}
+                                        className={`object-contain transition-all duration-500 ${isScrolled ? "w-16 h-16 md:w-18 md:h-18" : "w-20 h-20 md:w-26 md:h-26"
+                                            }`}
+                                    />
+                                )}
+                                {data?.logoText && (
+                                    <span className="text-2xl font-bold text-white">{data.logoText}</span>
+                                )}
+                            </SiteLink>
+                        )}
 
                         {/* Desktop Menu */}
                         <nav className="hidden lg:block">
                             <ul className="flex items-center gap-10 xl:gap-12 montserrat-alternates-font">
-                                {menuItems.map((item) => {
-                                    const href =
-                                        item === "Home" ? "/" : `/${item.toLowerCase()}`;
-
-                                    const isActive = pathname === href;
+                                {links.map((link) => {
+                                    const isActive = link.pageId === activePageId;
 
                                     return (
-                                        <li key={item} className="relative group">
-                                            <Link href={item}
+                                        <li key={link.pageId} className="relative group">
+                                            <SiteLink
+                                                link={link}
                                                 className={`relative font-medium text-md tracking-wide transition
                                                         after:absolute
                                                         after:left-0
@@ -81,10 +84,9 @@ const HeaderV2 = ({ data }: HeaderSectionProps) => {
                                                         : "text-white after:w-0 hover:text-red-500 hover:after:w-full"
                                                     }`}
                                             >
-                                                {item}
-                                            </Link>
+                                                {link.label}
+                                            </SiteLink>
                                         </li>
-
                                     )
                                 })}
                             </ul>
@@ -128,60 +130,26 @@ const HeaderV2 = ({ data }: HeaderSectionProps) => {
 
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-[#E91E63] scrollbar-track-[#222]">
-                    {menuItems.map((item) => {
-                        const href =
-                            item === "Home" ? "/" : `/${item.toLowerCase()}`;
-
-                        const isActive = pathname === href;
+                    {links.map((link) => {
+                        const isActive = link.pageId === activePageId;
 
                         return (
-                            <Link
-                                key={item}
-                                href={href}
+                            <SiteLink
+                                key={link.pageId}
+                                link={link}
                                 onClick={() => setIsOpen(false)}
-                                className={`block px-6 py-4 relative font-medium text-md tracking-wide transition
+                                className={`block w-full text-left px-6 py-4 relative font-medium text-md tracking-wide transition
                                 ${isActive
                                         ? "text-red-500 bg-white/10"
                                         : "text-white hover:text-red-500 hover:bg-white/5"
                                     }`}
                             >
-                                {item}
-                            </Link>
+                                {link.label}
+                            </SiteLink>
                         )
                     })}
                 </nav>
             </div>
-            {/* <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
-            <div className="container mx-auto px-6">
-                <div className="flex items-center justify-between h-20">
-                    <div className="flex items-center space-x-3">
-                        {data?.logoImage ? (
-                            <img src={data.logoImage} alt="Logo" className="h-10 object-contain" />
-                        ) : (
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                                <span className="font-bold text-blue-600 text-lg">MW</span>
-                            </div>
-                        )}
-                        <span className="text-xl font-bold">{data?.logoText || "MyWebsite"}</span>
-                    </div>
-                    <nav className="hidden md:flex space-x-6">
-                        {menuItems.map((item) => (
-                            <a key={item} href="#" className="hover:text-blue-100 transition font-medium">
-                                {item}
-                            </a>
-                        ))}
-                    </nav>
-                    <button className="hidden md:block bg-white text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-50 transition">
-                        Get Started
-                    </button>
-                    <button id="menuBtn" className="md:hidden text-white focus:outline-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </header> */}
         </>
     )
 }

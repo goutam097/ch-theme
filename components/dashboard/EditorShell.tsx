@@ -8,15 +8,22 @@ interface EditorShellProps {
   title: string;
   description: string;
   children: ReactNode;
+  /** Which page the preview should show. Defaults to the site's home page. */
+  previewPageId?: string;
 }
 
 /**
  * The split live-preview layout: editor form on the left, instantly-updating
- * website preview on the right. Shared by every content section so the editing
- * experience is identical regardless of which template variant is active —
- * users never know (or need to know) which variant renders their content.
+ * website preview on the right. Shared by every editor so the experience is
+ * identical regardless of which template variant is active — users never know
+ * (or need to know) which variant renders their content.
  */
-export function EditorShell({ title, description, children }: EditorShellProps) {
+export function EditorShell({
+  title,
+  description,
+  children,
+  previewPageId,
+}: EditorShellProps) {
   return (
     <div className="flex h-full flex-col lg:flex-row">
       {/* Left: editor */}
@@ -32,7 +39,7 @@ export function EditorShell({ title, description, children }: EditorShellProps) 
           <span className="text-sm font-medium text-zinc-500">Live preview</span>
           <PreviewToolbar />
         </div>
-        <PreviewCanvas className="flex-1" />
+        <PreviewCanvas className="flex-1" pageId={previewPageId} />
       </div>
     </div>
   );
