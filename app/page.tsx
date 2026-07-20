@@ -1,47 +1,95 @@
-import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+"use client";
 
-export default function Home() {
-  const steps = [
-    { n: "1", title: "Select a template", desc: "Pick from professionally designed, fully unique layouts." },
-    { n: "2", title: "Fill your content", desc: "One simple form per section - no design decisions needed." },
-    { n: "3", title: "Preview instantly", desc: "See your site update live on desktop, tablet, and mobile." },
-    { n: "4", title: "Publish", desc: "Go live at your own URL in one click." },
-  ];
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
+
+const API_BASE_URL = "http://localhost:5000/v1";
+
+function SSOFlow() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [status, setStatus] = useState("Initializing SSO...");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = searchParams.get("value");
+
+    if (!token) {
+      setStatus("No SSO token found.");
+      router.replace("/not-found");
+      return;
+    }
+
+    const handleSSO = async () => {
+      try {
+        setStatus("Authenticating...");
+
+        const authResponse = await axios.get(`${API_BASE_URL}/auth/user-token`, {
+          params: { value: token },
+          headers: { Accept: "application/json" },
+        });
+
+        const authData = authResponse.data ?? {};
+        const accessToken = authData?.data;
+
+        const profileResponse = await axios.get(`${API_BASE_URL}/user-profile/details`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const profileData = profileResponse.data ?? {};
+
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("auth_token", accessToken);
+          window.localStorage.setItem("auth_profile", JSON.stringify(profileData));
+          window.localStorage.setItem("auth_authenticated", "true");
+        }
+
+        setStatus("Signed in successfully.");
+        router.replace("/dashboard");
+      } catch (err: unknown) {
+        const message = axios.isAxiosError(err)
+          ? err.response?.data?.error || err.message
+          : err instanceof Error
+            ? err.message
+            : "Unable to complete sign-in.";
+
+        setError(message);
+        setStatus("Sign-in failed.");
+      }
+    };
+
+    void handleSSO();
+  }, [router, searchParams]);
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-linear-to-b from-white to-zinc-50 px-6">
-      <div className="mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center py-24 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm font-medium text-zinc-600">
-          <Sparkles className="h-4 w-4 text-indigo-600" /> SiteForge
-        </span>
-        <h1 className="mt-6 text-4xl font-bold tracking-tight text-zinc-900 md:text-6xl">
-          A website builder without the building.
-        </h1>
-        <p className="mt-5 max-w-xl text-lg text-zinc-600">
-          No drag-and-drop, no decisions to agonize over. Choose a template, fill
-          in your content, and publish. Switch designs anytime - your content
-          comes with you.
-        </p>
-        <Link
-          href="/dashboard"
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3.5 font-semibold text-white shadow-lg transition hover:bg-indigo-700"
-        >
-          Open the dashboard <ArrowRight className="h-4 w-4" />
-        </Link>
-
-        <div className="mt-20 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((s) => (
-            <div key={s.n} className="rounded-xl border border-zinc-200 bg-white p-5 text-left">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 font-bold text-indigo-600">
-                {s.n}
-              </div>
-              <h3 className="mt-3 font-semibold text-zinc-900">{s.title}</h3>
-              <p className="mt-1 text-sm text-zinc-500">{s.desc}</p>
-            </div>
-          ))}
-        </div>
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 text-center shadow-2xl">
+        <div className="mb-4 h-3 w-3 animate-pulse rounded-full bg-emerald-400" />
+        <h1 className="text-xl font-semibold">Single Sign-On</h1>
+        <p className="mt-3 text-sm text-slate-300">{status}</p>
+        {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
       </div>
-    </div>
+    </main>
   );
 }
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 text-center shadow-2xl">
+            <p className="text-sm text-slate-300">Loading SSO...</p>
+          </div>
+        </main>
+      }
+    >
+      <SSOFlow />
+    </Suspense>
+  );
+}
+

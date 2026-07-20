@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +19,41 @@ const see_list = [
 ];
 
 /**
+ * The signed-in user's saved images, if the SSO profile in localStorage carries
+ * them. Shapes vary between API responses, so probe the usual nestings and the
+ * usual casings rather than committing to one path.
+ */
+function readProfileImages(): { companyLogo: string; profileIcon: string } {
+  const empty = { companyLogo: "", profileIcon: "" };
+  if (typeof window === "undefined") return empty;
+
+  const saved = window.localStorage.getItem("auth_profile");
+  if (!saved) return empty;
+
+  try {
+    const parsed = JSON.parse(saved);
+    const sources = [parsed, parsed?.data, parsed?.user, parsed?.data?.user].filter(Boolean);
+
+    const pick = (...keys: string[]) => {
+      for (const source of sources) {
+        for (const key of keys) {
+          const value = source?.[key];
+          if (typeof value === "string" && value.trim()) return value;
+        }
+      }
+      return "";
+    };
+
+    return {
+      companyLogo: pick("company_logo", "companyLogo"),
+      profileIcon: pick("profile_icon", "profileIcon", "profile_image", "profileImage"),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/**
  * Edits the header BRANDING (logo text / logo image).
  *
  * The navigation menu is NOT edited here any more. It's derived from the site's
@@ -30,7 +65,26 @@ export function HeaderEditor() {
   const header = content.header;
   const dispatch = useAppDispatch();
 
-  const [addLogo, setAddLogo] = useState(header.logoImage ? "logo" : "text");
+  const profileImages = useMemo(readProfileImages, []);
+
+  // Only offer the saved images that actually exist on the profile.
+  const options = useMemo(() => {
+    const extra = [];
+    if (profileImages.companyLogo) {
+      extra.push({ value: "company_logo", label: "Use Company Logo" });
+    }
+    if (profileImages.profileIcon) {
+      extra.push({ value: "profile_icon", label: "Use Profile Icon" });
+    }
+    return [...see_list, ...extra];
+  }, [profileImages]);
+
+  const [addLogo, setAddLogo] = useState(() => {
+    if (!header.logoImage) return "text";
+    if (header.logoImage === profileImages.companyLogo) return "company_logo";
+    if (header.logoImage === profileImages.profileIcon) return "profile_icon";
+    return "logo";
+  });
   const [logoPic, setLogoPic] = useState<string | null>(header.logoImage || null);
 
   const { register, watch, setValue, formState: { errors } } = useForm<HeaderFormValues>({
@@ -95,7 +149,7 @@ export function HeaderEditor() {
         </p>
         <div>
           <SelectOption
-            options={see_list}
+            options={options}
             value={addLogo}
             onChange={(value) => {
               const selected = value as string;
@@ -106,10 +160,26 @@ export function HeaderEditor() {
                 setLogoPic(null);
                 setValue("logoImage", "", { shouldDirty: true, shouldValidate: true });
                 dispatch(updateHeader({ logoImage: "" }));
-              } else {
-                // Remove text
-                setValue("logoText", "", { shouldDirty: true, shouldValidate: true });
-                dispatch(updateHeader({ logoText: "" }));
+                return;
+              }
+
+              // Remove text
+              setValue("logoText", "", { shouldDirty: true, shouldValidate: true });
+              dispatch(updateHeader({ logoText: "" }));
+
+              // The saved-image options are ready to use straight away; "logo"
+              // still waits for an upload.
+              const saved =
+                selected === "company_logo"
+                  ? profileImages.companyLogo
+                  : selected === "profile_icon"
+                    ? profileImages.profileIcon
+                    : "";
+
+              if (saved) {
+                setLogoPic(saved);
+                setValue("logoImage", saved, { shouldDirty: true, shouldValidate: true });
+                dispatch(updateHeader({ logoImage: saved }));
               }
             }}
           />
@@ -122,9 +192,11 @@ export function HeaderEditor() {
             </Field>
           ) : (
             <>
-              <Field label="Logo Image" error={errors.logoImage?.message} hint="Logo image shown in the header.">
-                <input type="file" onChange={handleLogoUpload} accept="image/*" />
-              </Field>
+              {addLogo === "logo" && (
+                <Field label="Logo Image" error={errors.logoImage?.message} hint="Logo image shown in the header.">
+                  <input type="file" onChange={handleLogoUpload} accept="image/*" />
+                </Field>
+              )}
               {logoPic && (
                 <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-3">
                   <p className="mb-2 text-xs font-medium text-zinc-600">Preview:</p>

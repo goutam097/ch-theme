@@ -101,7 +101,18 @@ export function GalleryEditor({
 
 /** Slug + page inputs and a Fetch button that pulls images from the album API. */
 function ApiFetchPanel({ onLoaded }: { onLoaded: (items: GalleryItem[]) => void }) {
-  const [slug, setSlug] = useState("");
+  const [slug, setSlug] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const savedProfile = window.localStorage.getItem("auth_profile");
+    if (!savedProfile) return "";
+
+    try {
+      const parsed = JSON.parse(savedProfile);
+      return parsed?.slug || parsed?.data?.slug || parsed?.user?.slug || "";
+    } catch {
+      return "";
+    }
+  });
   const [page, setPage] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
