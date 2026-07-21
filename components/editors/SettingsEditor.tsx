@@ -6,7 +6,6 @@ import { settingsSchema, type SettingsFormValues } from "@/lib/schemas";
 import { useAppDispatch } from "@/store/hooks";
 import { updateSettings } from "@/store/slices/settingsSlice";
 import { useSettings } from "@/hooks/useSite";
-import { slugify } from "@/lib/utils";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +15,7 @@ export function SettingsEditor() {
   const settings = useSettings();
   const dispatch = useAppDispatch();
 
-  const { register, handleSubmit, setValue, formState: { errors, isDirty, isSubmitSuccessful } } =
+  const { register, handleSubmit, watch, formState: { errors, isDirty, isSubmitSuccessful } } =
     useForm<SettingsFormValues>({
       resolver: zodResolver(settingsSchema),
       defaultValues: {
@@ -36,13 +35,21 @@ export function SettingsEditor() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-5">
       <Field label="Site name" error={errors.siteName?.message}>
-        <Input
-          {...register("siteName")}
-          onBlur={(e) => setValue("slug", slugify(e.target.value), { shouldDirty: true })}
-        />
+        <Input {...register("siteName")} />
       </Field>
-      <Field label="Slug" hint="Your site is served at /site/<slug>." error={errors.slug?.message}>
-        <Input {...register("slug")} placeholder="my-site" />
+      {/* The slug comes from the signed-in account, not the site name — the
+          published site and the API-backed sections are both keyed on it, so
+          it isn't editable here. */}
+      <Field
+        label="Slug"
+        hint={
+          watch("slug")
+            ? `Your site is published at /${watch("slug")} — it comes from your account.`
+            : "Sign in to get your account slug."
+        }
+        error={errors.slug?.message}
+      >
+        <Input {...register("slug")} readOnly className="bg-zinc-50 text-zinc-500" />
       </Field>
       <Field label="SEO title" error={errors.seoTitle?.message}>
         <Input {...register("seoTitle")} />

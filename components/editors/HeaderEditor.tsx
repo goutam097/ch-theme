@@ -8,8 +8,10 @@ import { headerSchema, type HeaderFormValues } from "@/lib/schemas";
 import { useAppDispatch } from "@/store/hooks";
 import { updateHeader } from "@/store/slices/websiteSlice";
 import { useSiteContent } from "@/hooks/useSite";
+import { getProfileImages } from "@/lib/auth-profile";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MediaField } from "@/components/ui/media-field";
 import { useFormSync } from "./useFormSync";
 import SelectOption from "../ui/SelectOption";
 
@@ -18,40 +20,6 @@ const see_list = [
   { value: "text", label: "Add Text" },
 ];
 
-/**
- * The signed-in user's saved images, if the SSO profile in localStorage carries
- * them. Shapes vary between API responses, so probe the usual nestings and the
- * usual casings rather than committing to one path.
- */
-function readProfileImages(): { companyLogo: string; profileIcon: string } {
-  const empty = { companyLogo: "", profileIcon: "" };
-  if (typeof window === "undefined") return empty;
-
-  const saved = window.localStorage.getItem("auth_profile");
-  if (!saved) return empty;
-
-  try {
-    const parsed = JSON.parse(saved);
-    const sources = [parsed, parsed?.data, parsed?.user, parsed?.data?.user].filter(Boolean);
-
-    const pick = (...keys: string[]) => {
-      for (const source of sources) {
-        for (const key of keys) {
-          const value = source?.[key];
-          if (typeof value === "string" && value.trim()) return value;
-        }
-      }
-      return "";
-    };
-
-    return {
-      companyLogo: pick("company_logo", "companyLogo"),
-      profileIcon: pick("profile_icon", "profileIcon", "profile_image", "profileImage"),
-    };
-  } catch {
-    return empty;
-  }
-}
 
 /**
  * Edits the header BRANDING (logo text / logo image).
@@ -65,7 +33,7 @@ export function HeaderEditor() {
   const header = content.header;
   const dispatch = useAppDispatch();
 
-  const profileImages = useMemo(readProfileImages, []);
+  const profileImages = useMemo(() => getProfileImages(), []);
 
   // Only offer the saved images that actually exist on the profile.
   const options = useMemo(() => {
@@ -85,8 +53,6 @@ export function HeaderEditor() {
     if (header.logoImage === profileImages.profileIcon) return "profile_icon";
     return "logo";
   });
-  const [logoPic, setLogoPic] = useState<string | null>(header.logoImage || null);
-
   const { register, watch, setValue, formState: { errors } } = useForm<HeaderFormValues>({
     resolver: zodResolver(headerSchema),
     mode: "onChange",
@@ -100,43 +66,14 @@ export function HeaderEditor() {
     dispatch(updateHeader(values));
   });
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      console.error("Please select an image file");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const rawDataUrl = reader.result as string;
-
-      // Downscale the logo to a small PNG so the resulting data URL stays tiny
-      // enough to (a) persist in localStorage and (b) render fast in the preview.
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 240; // px on the longest edge
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // Keep PNG to preserve logo transparency.
-        const dataUrl = canvas.toDataURL("image/png");
-
-        setLogoPic(dataUrl);
-        setValue("logoImage", dataUrl, { shouldDirty: true });
-        // Dispatch straight to the store so the live preview reflects the logo
-        // immediately, independent of the react-hook-form watch subscription.
-        dispatch(updateHeader({ logoImage: dataUrl }));
-      };
-      img.src = rawDataUrl;
-    };
-    reader.readAsDataURL(file);
+  /**
+   * Dispatch straight to the store as well as into the form, so the live
+   * preview reflects the logo immediately rather than waiting on the
+   * react-hook-form watch subscription.
+   */
+  const setLogoImage = (value: string) => {
+    setValue("logoImage", value, { shouldDirty: true, shouldValidate: true });
+    dispatch(updateHeader({ logoImage: value }));
   };
 
   const menuPages = content.pages.filter((p) => p.showInMenu);
@@ -157,9 +94,7 @@ export function HeaderEditor() {
 
               if (selected === "text") {
                 // Remove logo image
-                setLogoPic(null);
-                setValue("logoImage", "", { shouldDirty: true, shouldValidate: true });
-                dispatch(updateHeader({ logoImage: "" }));
+                setLogoImage("");
                 return;
               }
 
@@ -176,11 +111,7 @@ export function HeaderEditor() {
                     ? profileImages.profileIcon
                     : "";
 
-              if (saved) {
-                setLogoPic(saved);
-                setValue("logoImage", saved, { shouldDirty: true, shouldValidate: true });
-                dispatch(updateHeader({ logoImage: saved }));
-              }
+              if (saved) setLogoImage(saved);
             }}
           />
         </div>
@@ -192,16 +123,23 @@ export function HeaderEditor() {
             </Field>
           ) : (
             <>
-              {addLogo === "logo" && (
-                <Field label="Logo Image" error={errors.logoImage?.message} hint="Logo image shown in the header.">
-                  <input type="file" onChange={handleLogoUpload} accept="image/*" />
-                </Field>
-              )}
-              {logoPic && (
-                <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-3">
-                  <p className="mb-2 text-xs font-medium text-zinc-600">Preview:</p>
-                  <img src={logoPic} alt="Logo preview" className="h-10 object-contain" />
-                </div>
+              {addLogo === "logo" ? (
+                <MediaField
+                  label="Logo Image"
+                  // A logo never renders large, so keep the stored data URL tiny.
+                  maxDimension={240}
+                  hint="Logo image shown in the header."
+                  error={errors.logoImage?.message}
+                  value={watch("logoImage") ?? ""}
+                  onChange={setLogoImage}
+                />
+              ) : (
+                watch("logoImage") && (
+                  <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-3">
+                    <p className="mb-2 text-xs font-medium text-zinc-600">Preview:</p>
+                    <img src={watch("logoImage")} alt="Logo preview" className="h-10 object-contain" />
+                  </div>
+                )
               )}
             </>
           )}

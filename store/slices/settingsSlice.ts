@@ -8,7 +8,11 @@ interface SettingsState extends SiteSettings {
 
 const initialState: SettingsState = {
   siteName: "Your Studio",
-  slug: "your-studio",
+  // The published URL is `/<slug>`, and the slug IS the signed-in user's slug
+  // (e.g. "test999"), not something derived from the site name. It's filled in
+  // from the auth profile once the client hydrates — see <ProfileSlugSync/>.
+  // Blank until then, so nothing ever publishes under a made-up slug.
+  slug: "",
   seoTitle: "Your Studio — Crafted digital experiences",
   seoDescription:
     "We design and build beautiful, fast websites that turn visitors into customers.",

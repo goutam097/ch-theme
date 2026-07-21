@@ -7,6 +7,7 @@ import { heroSchema, type HeroFormValues } from "@/lib/schemas";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { MediaField } from "@/components/ui/media-field";
 import SelectOption from "../ui/SelectOption";
 import { useFormSync } from "./useFormSync";
 import type { HeroData } from "@/types";
@@ -25,10 +26,11 @@ export function HeroEditor({
   data: HeroData;
   onChange: (value: HeroData) => void;
 }) {
-  const [mediaType, setMediaType] = useState("image");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [carouselPreview, setCarouselPreview] = useState<string[]>([]);
+  const [mediaType, setMediaType] = useState(() => {
+    if (data.video) return "video";
+    if (data.carousel?.length) return "Carousel";
+    return "image";
+  });
 
   const { register, watch, setValue, formState: { errors } } = useForm<HeroFormValues>({
     resolver: zodResolver(heroSchema),
@@ -41,46 +43,7 @@ export function HeroEditor({
 
   useFormSync<HeroFormValues, HeroData>(watch, onChange);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const image = reader.result as string;
-      setImagePreview(image);
-      setValue("image", image, { shouldDirty: true, shouldValidate: true });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const url = URL.createObjectURL(file);
-    setVideoPreview(url);
-    setValue("video", url, { shouldDirty: true, shouldValidate: true });
-  };
-
-  const handleCarouselUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-
-    const images: string[] = [];
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        images.push(reader.result as string);
-
-        if (images.length === files.length) {
-          setCarouselPreview(images);
-          setValue("carousel", images, { shouldDirty: true, shouldValidate: true });
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+  const opts = { shouldDirty: true, shouldValidate: true } as const;
 
   return (
     <form className="space-y-5">
@@ -116,54 +79,42 @@ export function HeroEditor({
             onChange={(value) => {
               setMediaType(value as string);
 
-              // Clear previous values
-              setImagePreview(null);
-              setVideoPreview(null);
-              setCarouselPreview([]);
-
-              setValue("image", "");
-              setValue("video", "");
-              setValue("carousel", []);
+              // Only one media kind is live at a time, so clear the others.
+              setValue("image", "", opts);
+              setValue("video", "", opts);
+              setValue("carousel", [], opts);
             }}
           />
         </div>
         <div className="space-y-4">
           {mediaType === "image" && (
-            <>
-              <Field label="Banner Image">
-                <input type="file" accept="image/*" onChange={handleImageUpload} />
-              </Field>
-
-              {imagePreview && (
-                <img src={imagePreview} className="mt-3 h-48 rounded object-cover" />
-              )}
-            </>
+            <MediaField
+              label="Banner Image"
+              error={errors.image?.message}
+              value={watch("image") ?? ""}
+              onChange={(value) => setValue("image", value, opts)}
+            />
           )}
 
           {mediaType === "video" && (
-            <>
-              <Field label="Banner Video">
-                <input type="file" accept="video/*" onChange={handleVideoUpload} />
-              </Field>
-
-              {videoPreview && (
-                <video src={videoPreview} controls className="mt-3 h-56 rounded" />
-              )}
-            </>
+            <MediaField
+              label="Banner Video"
+              kind="video"
+              error={errors.video?.message}
+              value={watch("video") ?? ""}
+              onChange={(value) => setValue("video", value, opts)}
+            />
           )}
 
           {mediaType === "Carousel" && (
-            <>
-              <Field label="Carousel Images">
-                <input type="file" multiple accept="image/*" onChange={handleCarouselUpload} />
-              </Field>
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                {carouselPreview.map((img, index) => (
-                  <img key={index} src={img} className="h-28 w-28 rounded object-cover" />
-                ))}
-              </div>
-            </>
+            <MediaField
+              label="Carousel Images"
+              multiple
+              hint="Upload several at once, or add them one URL at a time."
+              error={errors.carousel?.message}
+              value={watch("carousel") ?? []}
+              onChange={(value) => setValue("carousel", value, opts)}
+            />
           )}
         </div>
       </div>

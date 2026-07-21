@@ -13,7 +13,7 @@
  * WHY WE PERSIST LOCALLY: the upstream backend is write-only — it accepts the
  * POST (201 "Template Json Submit Successfully") but has no read route, so a
  * GET always returns its "Blank URL" catch-all. Without a local copy the public
- * `/site/<slug>` page could never read the snapshot back. So POST saves to a
+ * `/<slug>` page could never read the snapshot back. So POST saves to a
  * server-side store (`lib/site-store`) that GET reads from; the forward upstream
  * is kept best-effort so the backend still gets its copy.
  */
@@ -33,7 +33,7 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
   const { slug } = await ctx.params;
   const body = await request.text();
 
-  // 1. Persist locally so `/site/<slug>` can read the snapshot back. The client
+  // 1. Persist locally so `/<slug>` can read the snapshot back. The client
   //    sends the raw SiteSnapshot JSON; parse it and store it authoritatively.
   const snapshot = extractSnapshot(safeJson(body));
   if (!snapshot) {

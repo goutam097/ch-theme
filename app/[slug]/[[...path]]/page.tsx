@@ -10,16 +10,22 @@ import type { SiteSnapshot } from "@/lib/site-theme";
 /**
  * Public, published website — every page of it.
  *
- *   /site/acme          → the site's home page
- *   /site/acme/about    → the page whose slug is "about"
- *   /site/acme/pricing  → a page the user created themselves
+ *   /acme          → the site's home page
+ *   /acme/about    → the page whose slug is "about"
+ *   /acme/pricing  → a page the user created themselves
+ *
+ * Published sites live at the app ROOT, so the slug IS the first path segment.
+ * Next.js matches static segments before dynamic ones, so /dashboard, /preview
+ * and /api still win over this route — but that also means a site slug must
+ * never collide with one of them. `RESERVED_SLUGS` in lib/schemas.ts is what
+ * enforces that; add to it whenever a new top-level route appears.
  *
  * This is an OPTIONAL catch-all (`[[...path]]`), which matches both the bare
- * `/site/<slug>` and any single page segment beneath it. That's what lets one
- * route serve a menu the user can grow at runtime — there's no per-page route
- * to add when they create a page. (It also means there must be no sibling
- * `page.tsx` at `/site/[slug]`: an optional catch-all already matches that path,
- * and two routes of equal specificity is a build error.)
+ * `/<slug>` and any single page segment beneath it. That's what lets one route
+ * serve a menu the user can grow at runtime — there's no per-page route to add
+ * when they create a page. (It also means there must be no sibling `page.tsx`
+ * at `/[slug]`: an optional catch-all already matches that path, and two routes
+ * of equal specificity is a build error.)
  *
  * Fetches the published snapshot ({templateId, content, settings}) for `slug`
  * and renders it with the SAME <TemplateRenderer/> the dashboard preview uses,
@@ -68,7 +74,7 @@ export default function PublicSitePage({
         <p className="max-w-md text-zinc-500">
           {snapshot
             ? "Head back to the dashboard and hit Publish to make this site live."
-            : `No published site exists at /site/${slug}.`}
+            : `No published site exists at /${slug}.`}
         </p>
         <Link href="/dashboard" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white">
           Go to dashboard
@@ -81,10 +87,10 @@ export default function PublicSitePage({
     <TemplateRenderer
       templateId={snapshot.templateId}
       content={snapshot.content}
-      // `path` selects the page; `basePath` makes every menu link resolve to
-      // /site/<slug>/… rather than the app root.
+      // `path` selects the page; `basePath` makes every menu link resolve
+      // under the site's own slug.
       segments={path}
-      basePath={`/site/${slug}`}
+      basePath={`/${slug}`}
     />
   );
 }

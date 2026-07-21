@@ -77,12 +77,24 @@ export const pageSchema = z.object({
   showInMenu: z.boolean(),
 });
 
+/**
+ * Top-level app routes a published site can't be named after. Sites are served
+ * from the root (`/<slug>`), and Next.js matches these static segments first, so
+ * a site using one of these names would simply be unreachable. Keep in sync with
+ * the directories in `app/`.
+ */
+export const RESERVED_SLUGS = ["api", "dashboard", "preview", "site", "_next"] as const;
+
 export const settingsSchema = z.object({
   siteName: z.string().min(1, "Site name is required").max(80),
   slug: z
     .string()
     .min(1, "Slug is required")
-    .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers and hyphens only"),
+    .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers and hyphens only")
+    .refine(
+      (slug) => !(RESERVED_SLUGS as readonly string[]).includes(slug),
+      "That name is reserved by the app — pick another",
+    ),
   seoTitle: z.string().max(70),
   seoDescription: z.string().max(160),
   favicon: optionalUrl,

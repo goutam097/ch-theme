@@ -9,7 +9,7 @@
  * 3. The same persisted state is shared across:
  *    - The dashboard editor
  *    - The /preview standalone page
- *    - The /site/[slug] published site
+ *    - The /[slug] published site
  *
  * This means all three views always show the same data.
  */
