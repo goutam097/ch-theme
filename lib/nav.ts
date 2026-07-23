@@ -15,7 +15,7 @@ import type { NavLink, SitePage } from "@/types";
  * Build the href for a page under a given base path.
  *
  * The same page renders at different URLs depending on where the site is shown:
- *   - published site → basePath "/site/acme"  → "/site/acme" and "/site/acme/about"
+ *   - published site → basePath "/acme"      → "/acme" and "/acme/about"
  *   - standalone preview → basePath "/preview" → "/preview" and "/preview/about"
  *
  * The home page (slug "") is the base path itself.
@@ -45,9 +45,9 @@ export function homePage(pages: SitePage[]): SitePage | undefined {
 /**
  * Resolve the URL segments after the base path to a page.
  *
- * `/site/acme`        → segments []          → the home page
- * `/site/acme/about`  → segments ["about"]   → the page with slug "about"
- * `/site/acme/nope`   → segments ["nope"]    → undefined (caller shows a 404)
+ * `/acme`        → segments []          → the home page
+ * `/acme/about`  → segments ["about"]   → the page with slug "about"
+ * `/acme/nope`   → segments ["nope"]    → undefined (caller shows a 404)
  *
  * Only the FIRST segment is significant — pages are a flat list, not a tree.
  */

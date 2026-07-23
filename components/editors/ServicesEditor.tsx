@@ -8,6 +8,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { MediaField } from "@/components/ui/media-field";
 import { useFormSync } from "./useFormSync";
 import type { ServiceItem } from "@/types";
 
@@ -25,7 +26,7 @@ export function ServicesEditor({
   data: ServiceItem[];
   onChange: (value: ServiceItem[]) => void;
 }) {
-  const { register, control, watch, formState: { errors } } = useForm<ServicesFormValues>({
+  const { register, control, watch, setValue, formState: { errors } } = useForm<ServicesFormValues>({
     resolver: zodResolver(servicesSchema),
     mode: "onChange",
     defaultValues: { items: data },
@@ -60,9 +61,14 @@ export function ServicesEditor({
             <Field label="Description" error={errors.items?.[i]?.description?.message}>
               <Textarea {...register(`items.${i}.description`)} rows={2} />
             </Field>
-            <Field label="Image URL" error={errors.items?.[i]?.image?.message}>
-              <Input {...register(`items.${i}.image`)} placeholder="https://…" />
-            </Field>
+            <MediaField
+              label="Image"
+              error={errors.items?.[i]?.image?.message}
+              value={watch(`items.${i}.image`) ?? ""}
+              onChange={(value) =>
+                setValue(`items.${i}.image`, value, { shouldDirty: true, shouldValidate: true })
+              }
+            />
           </div>
         </div>
       ))}

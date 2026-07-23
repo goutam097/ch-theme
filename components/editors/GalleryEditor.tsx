@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { gallerySchema, type GalleryFormValues } from "@/lib/schemas";
 import { fetchGalleryFromApi } from "@/lib/gallery-api";
+import { getProfileSlug } from "@/lib/auth-profile";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MediaField } from "@/components/ui/media-field";
 import { cn } from "@/lib/utils";
 import { useFormSync } from "./useFormSync";
 import type { GalleryItem } from "@/types";
@@ -26,17 +28,17 @@ export function GalleryEditor({
 }) {
   const [source, setSource] = useState<GallerySource>("manual");
 
-  const { register, control, watch, reset, formState: { errors } } = useForm<GalleryFormValues>({
+  const { watch, setValue, reset, formState: { errors } } = useForm<GalleryFormValues>({
     resolver: zodResolver(gallerySchema),
     mode: "onChange",
     defaultValues: { items: data },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
-
   useFormSync<GalleryFormValues, { items?: GalleryItem[] }>(watch, (values) => {
     if (values.items) onChange(values.items);
   });
+
+  const images = (watch("items") ?? []).map((item) => item?.image ?? "");
 
   return (
     <div className="space-y-4">
@@ -69,31 +71,19 @@ export function GalleryEditor({
       )}
 
       <form className="space-y-3">
-        {fields.map((field, i) => (
-          <div key={field.id} className="flex items-end gap-2">
-            <Field label={`Image ${i + 1}`} className="flex-1" error={errors.items?.[i]?.image?.message}>
-              <Input {...register(`items.${i}.image`)} placeholder="https://…" />
-            </Field>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => remove(i)}
-              aria-label="Remove image"
-            >
-              <Trash2 className="h-4 w-4 text-red-500" />
-            </Button>
-          </div>
-        ))}
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => append({ image: "" })}
-        >
-          <Plus className="h-4 w-4" /> Add image
-        </Button>
+        {/* The gallery is just a list of images, so one multi-value control
+            replaces the old row-per-image layout. */}
+        <MediaField
+          label="Images"
+          multiple
+          hint="Upload several at once, or add them one URL at a time."
+          error={typeof errors.items?.message === "string" ? errors.items.message : undefined}
+          value={images}
+          onChange={(next) => setValue("items", next.map((image) => ({ image })), {
+            shouldDirty: true,
+            shouldValidate: true,
+          })}
+        />
       </form>
     </div>
   );
@@ -101,18 +91,7 @@ export function GalleryEditor({
 
 /** Slug + page inputs and a Fetch button that pulls images from the album API. */
 function ApiFetchPanel({ onLoaded }: { onLoaded: (items: GalleryItem[]) => void }) {
-  const [slug, setSlug] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const savedProfile = window.localStorage.getItem("auth_profile");
-    if (!savedProfile) return "";
-
-    try {
-      const parsed = JSON.parse(savedProfile);
-      return parsed?.slug || parsed?.data?.slug || parsed?.user?.slug || "";
-    } catch {
-      return "";
-    }
-  });
+  const [slug, setSlug] = useState(getProfileSlug);
   const [page, setPage] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

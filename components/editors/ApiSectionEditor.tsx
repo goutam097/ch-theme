@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { getProfileSlug } from "@/lib/auth-profile";
 import type { ApiSectionData } from "@/types";
 
 /**
@@ -23,23 +24,14 @@ export function ApiSectionEditor({
   data: ApiSectionData;
   onChange: (value: ApiSectionData) => void;
 }) {
-  const [slug, setSlug] = useState(data.slug || "");
+  // Defaults to the signed-in user's own slug, which is what these sections are
+  // keyed on; an explicit slug already on the block always wins.
+  const [slug, setSlug] = useState(() => data.slug || getProfileSlug());
 
+  // Persist that default into the block so it survives without an edit.
   useEffect(() => {
-    const savedSlug = typeof window !== "undefined" ? window.localStorage.getItem("auth_profile") : null;
-    if (savedSlug) {
-      try {
-        const parsed = JSON.parse(savedSlug);
-        const fallback = parsed?.slug || parsed?.data?.slug || parsed?.user?.slug || "";
-        if (fallback) {
-          setSlug(fallback);
-          onChange({ ...data, slug: fallback });
-        }
-      } catch {
-        // Ignore invalid JSON.
-      }
-    }
-  }, [data, onChange]);
+    if (!data.slug && slug) onChange({ ...data, slug });
+  }, [data, onChange, slug]);
 
   return (
     <div className="space-y-3">

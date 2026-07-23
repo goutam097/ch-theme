@@ -6,6 +6,7 @@ import { aboutSchema, type AboutFormValues } from "@/lib/schemas";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { MediaField } from "@/components/ui/media-field";
 import { useFormSync } from "./useFormSync";
 import type { AboutData } from "@/types";
 
@@ -17,7 +18,7 @@ export function AboutEditor({
   data: AboutData;
   onChange: (value: AboutData) => void;
 }) {
-  const { register, watch, formState: { errors } } = useForm<AboutFormValues>({
+  const { register, watch, setValue, formState: { errors } } = useForm<AboutFormValues>({
     resolver: zodResolver(aboutSchema),
     mode: "onChange",
     defaultValues: data,
@@ -33,9 +34,13 @@ export function AboutEditor({
       <Field label="Description" error={errors.description?.message}>
         <Textarea {...register("description")} rows={6} placeholder="Tell your story" />
       </Field>
-      <Field label="Image URL" hint="Hidden automatically by text-only variants." error={errors.image?.message}>
-        <Input {...register("image")} placeholder="https://…" />
-      </Field>
+      <MediaField
+        label="Image"
+        hint="Paste a URL or upload one. Hidden automatically by text-only variants."
+        error={errors.image?.message}
+        value={watch("image") ?? ""}
+        onChange={(value) => setValue("image", value, { shouldDirty: true, shouldValidate: true })}
+      />
     </form>
   );
 }

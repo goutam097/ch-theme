@@ -6,7 +6,7 @@
  * The upstream backend (`THEME_API_BASE`) is WRITE-ONLY: `POST .../theme/<slug>`
  * saves a snapshot and returns 201, but it exposes no matching read route —
  * every GET (any path, even "/") returns its `{statusCode:200,message:"Blank
- * URL"}` catch-all. So after publishing, `/site/<slug>` could never fetch the
+ * URL"}` catch-all. So after publishing, `/<slug>` could never fetch the
  * snapshot back and rendered "Site not found".
  *
  * To make publish → view work, the `/api/sites/<slug>` proxy persists each

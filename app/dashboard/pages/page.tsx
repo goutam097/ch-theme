@@ -13,7 +13,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { usePages } from "@/hooks/useSite";
+import { usePages, useSettings } from "@/hooks/useSite";
 import { useAppDispatch } from "@/store/hooks";
 import { useHydrated } from "@/hooks/useHydrated";
 import {
@@ -38,10 +38,14 @@ import { Field } from "@/components/ui/field";
 export default function PagesManagerPage() {
   const hydrated = useHydrated();
   const pages = usePages();
+  const settings = useSettings();
   const dispatch = useAppDispatch();
   const router = useRouter();
 
   const [newLabel, setNewLabel] = useState("");
+
+  // Pages live under the site's own slug: /test999/pricing.
+  const siteBase = `/${settings.slug}`;
 
   function handleAdd() {
     const label = newLabel.trim();
@@ -76,7 +80,7 @@ export default function PagesManagerPage() {
             className="flex-1"
             hint={
               newLabel.trim()
-                ? `Will be published at /${slugify(newLabel) || "page"}`
+                ? `Will be published at ${siteBase}/${slugify(newLabel) || "page"}`
                 : "e.g. Pricing, Blog, Our Team"
             }
           >

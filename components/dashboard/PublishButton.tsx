@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 /**
  * Publish action. Saves the whole site as a JSON snapshot
  * ({templateId, content, settings}) to the backend via the /api/sites proxy,
- * then flips local status to "published". The public site at /site/<slug>
+ * then flips local status to "published". The public site at /<slug>
  * fetches that snapshot back by slug and renders it.
  */
 export function PublishButton() {
@@ -61,7 +61,7 @@ export function PublishButton() {
       <div className="flex items-center gap-2">
         {isPublished && (
           <Link
-            href={`/site/${settings.slug}`}
+            href={`/${settings.slug}`}
             target="_blank"
             className="hidden items-center gap-1.5 text-sm font-medium text-zinc-500 hover:text-zinc-900 sm:flex"
           >

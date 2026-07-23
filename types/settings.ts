@@ -12,7 +12,7 @@
 export interface SiteSettings {
   /** Display name of the site, e.g. "Your Studio" */
   siteName: string;
-  /** URL slug for the published site: /site/<slug> */
+  /** URL slug for the published site: /<slug> */
   slug: string;
   /** Optional favicon URL */
   favicon?: string;
@@ -22,7 +22,7 @@ export interface SiteSettings {
   seoDescription: string;
   /** Social share image (og:image) URL */
   socialImage?: string;
-  /** Publication state: "draft" (not live) or "published" (live at /site/<slug>) */
+  /** Publication state: "draft" (not live) or "published" (live at /<slug>) */
   status: "draft" | "published";
   /** ISO timestamp of last publish; null when the site has never been published */
   publishedAt: string | null;

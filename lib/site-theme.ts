@@ -6,7 +6,7 @@
  * A "snapshot" is the complete, template-agnostic description of one published
  * site: which template is active, all its content, and its settings. This is
  * the JSON that gets POSTed to the backend on Publish and fetched back (by
- * slug) to render the public site at /site/<slug>.
+ * slug) to render the public site at /<slug>.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR THE BACKEND CONTRACT.
@@ -70,7 +70,7 @@ export function extractSnapshot(payload: unknown): SiteSnapshot | null {
 /**
  * Server-side: fetch and parse a published theme by slug.
  * Returns `null` if the slug has no saved theme or the backend is unreachable.
- * Called from the public `/site/<slug>` Server Component (no CORS server-side).
+ * Called from the public `/<slug>` Server Component (no CORS server-side).
  */
 export async function loadSiteTheme(slug: string): Promise<SiteSnapshot | null> {
   try {

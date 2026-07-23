@@ -19,7 +19,7 @@ interface TemplateRendererProps {
   segments?: string[];
   /** Show this exact page, by id. Used by the dashboard preview. */
   pageId?: string;
-  /** Prefix for every menu href, e.g. "/site/acme". "" on a root-mounted site. */
+  /** Prefix for every menu href, e.g. "/acme". "" on a root-mounted site. */
   basePath?: string;
   /**
    * When provided, menu clicks call this instead of navigating — the dashboard
