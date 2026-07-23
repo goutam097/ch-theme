@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/v1";
+const API_BASE_URL = "http://localhost:3000/v1";
 
 function SSOFlow() {
   const router = useRouter();

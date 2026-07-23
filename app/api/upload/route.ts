@@ -17,7 +17,7 @@
  */
 
 // TODO(backend): replace with the real S3-upload endpoint URL.
-const UPLOAD_ENDPOINT = "http://localhost:5000/v1/temp-post/temp-image-upload";
+const UPLOAD_ENDPOINT = "http://localhost:3000/v1/temp-post/temp-image-upload";
 
 /** Shape the request body the way the backend upload endpoint expects. */
 function toUploadBody(data: string, filename: string): unknown {

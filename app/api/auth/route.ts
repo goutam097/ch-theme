@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/v1";
+const API_BASE_URL = "http://localhost:3000/v1";
 
 function getAccessToken(payload: Record<string, unknown>, fallback: string) {
   return (

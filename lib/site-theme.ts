@@ -32,7 +32,7 @@ export interface SiteSnapshot {
  *   - POST `${THEME_API_BASE}/<slug>`  → save the snapshot JSON
  *   - GET  `${THEME_API_BASE}/<slug>`  → load the saved snapshot
  */
-export const THEME_API_BASE = "http://localhost:5000/v1/site/theme";
+export const THEME_API_BASE = "http://localhost:3000/v1/site/theme";
 
 /**
  * Shape the request body sent to the backend on save.

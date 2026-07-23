@@ -6,36 +6,42 @@ import HeroV2 from "../sections/hero/HeroV2";
 import HeroV3 from "../sections/hero/HeroV3";
 import HeroV4 from "../sections/hero/HeroV4";
 import HeroV5 from "../sections/hero/HeroV5";
+import HeroV6 from "../sections/hero/HeroV6";
 
 import AboutV1 from "../sections/about/AboutV1";
 import AboutV2 from "../sections/about/AboutV2";
 import AboutV3 from "../sections/about/AboutV3";
 import AboutV4 from "../sections/about/AboutV4";
 import AboutV5 from "../sections/about/AboutV5";
+import AboutV6 from "../sections/about/AboutV6";
 
 import ServicesV1 from "../sections/services/ServicesV1";
 import ServicesV2 from "../sections/services/ServicesV2";
 import ServicesV3 from "../sections/services/ServicesV3";
 import ServicesV4 from "../sections/services/ServicesV4";
 import ServicesV5 from "../sections/services/ServicesV5";
+import ServicesV6 from "../sections/services/ServicesV6";
 
 import GalleryV1 from "../sections/gallery/GalleryV1";
 import GalleryV2 from "../sections/gallery/GalleryV2";
 import GalleryV3 from "../sections/gallery/GalleryV3";
 import GalleryV4 from "../sections/gallery/GalleryV4";
 import GalleryV5 from "../sections/gallery/GalleryV5";
+import GalleryV6 from "../sections/gallery/GalleryV6";
 
 import ContactV1 from "../sections/contact/ContactV1";
 import ContactV2 from "../sections/contact/ContactV2";
 import ContactV3 from "../sections/contact/ContactV3";
 import ContactV4 from "../sections/contact/ContactV4";
 import ContactV5 from "../sections/contact/ContactV5";
+import ContactV6 from "../sections/contact/ContactV6";
 
 import HeaderV1 from "../sections/header/HeaderV1";
 import HeaderV2 from "../sections/header/HeaderV2";
 import HeaderV3 from "../sections/header/HeaderV3";
 import HeaderV4 from "../sections/header/HeaderV4";
 import HeaderV5 from "../sections/header/HeaderV5";
+import HeaderV6 from "../sections/header/HeaderV6";
 
 // API-backed sections (fetch their items at render time from `/api/sections/*`).
 import EventV1 from "../sections/events/EventV1";
@@ -65,36 +71,42 @@ export const sectionRegistry: Record<string, AnySectionComponent> = {
   hero_v3: HeroV3,
   hero_v4: HeroV4,
   hero_v5: HeroV5,
+  hero_v6: HeroV6,
   // About
   about_v1: AboutV1,
   about_v2: AboutV2,
   about_v3: AboutV3,
   about_v4: AboutV4,
   about_v5: AboutV5,
+  about_v6: AboutV6,
   // Services
   services_v1: ServicesV1,
   services_v2: ServicesV2,
   services_v3: ServicesV3,
   services_v4: ServicesV4,
   services_v5: ServicesV5,
+  services_v6: ServicesV6,
   // Gallery
   gallery_v1: GalleryV1,
   gallery_v2: GalleryV2,
   gallery_v3: GalleryV3,
   gallery_v4: GalleryV4,
   gallery_v5: GalleryV5,
+  gallery_v6: GalleryV6,
   // Contact
   contact_v1: ContactV1,
   contact_v2: ContactV2,
   contact_v3: ContactV3,
   contact_v4: ContactV4,
   contact_v5: ContactV5,
+  contact_v6: ContactV6,
   // Header
   header_v1: HeaderV1,
   header_v2: HeaderV2,
   header_v3: HeaderV3,
   header_v4: HeaderV4,
   header_v5: HeaderV5,
+  header_v6: HeaderV6,
   // API-backed sections
   event_v1: EventV1,
   group_v1: GroupV1,

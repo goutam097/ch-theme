@@ -5,6 +5,7 @@ import {
   template3,
   template4,
   template5,
+  template6,
 } from "../configs";
 
 /**
@@ -20,6 +21,7 @@ export const templates: Record<string, TemplateConfig> = {
   template3,
   template4,
   template5,
+  template6,
 };
 
 /** Stable, ordered list for galleries and selectors. */
